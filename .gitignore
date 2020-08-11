@@ -1,0 +1,17 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/ConsoleAppCore/bin/Debug/netcoreapp3.1
+/ConsoleAppCore/obj
+/ExcelHub/obj
+/ConsoleAppCore/.vs/ConsoleAppCore
+/KissExcel/bin/Debug/netstandard2.0
+/KissExcel/obj
+/KissExcel.Test/obj
+/KissExcel.Test/bin/Debug/netstandard2.0
+/KissExcel.Test/bin/Debug/netcoreapp3.1
+/.idea/.idea.ExcelHub
+/KissExcel/bin/Debug
+/ExcelHub.sln.DotSettings.user
