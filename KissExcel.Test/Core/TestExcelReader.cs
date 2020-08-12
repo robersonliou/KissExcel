@@ -25,6 +25,15 @@ namespace KissExcel.Test.Core
 
         private ExcelReader _excelReader;
 
+        [Test]
+        public void ColumnName_Ingore_CaseSensitive()
+        {
+            var stubExcelReader = new StubExcelReader();
+            stubExcelReader.IncludeHeader(true);
+            stubExcelReader.FakeContent = new[] {(0, 0, "Number"), (1, 0, "999")};
+            var actual = stubExcelReader.MapTo<IgnoreCaseModel>().First();
+            Assert.AreEqual(actual.Id, 999);
+        }
 
         [Test]
         public void FilePathOfOption_IsNull_ThrowException()
@@ -37,10 +46,13 @@ namespace KissExcel.Test.Core
         public void Matched_ColumnName_NotFound_ThrowException()
         {
             var stubExcelReader = new StubExcelReader();
+            stubExcelReader.IncludeHeader(true);
+            stubExcelReader.FakeContent = new[] {(0, 0, "Num"), (1, 0, "1")};
+
             var expectedErrorMessage = "Can not find matched column name:[Number] in the excel header.";
 
             Assert.Throws(Is.TypeOf<NoMatchedColumnNameException>()
-                .And.Message.EqualTo(expectedErrorMessage), () => stubExcelReader.MapTo<SomeData>().ToList());
+                .And.Message.EqualTo(expectedErrorMessage), () => stubExcelReader.MapTo<SimpleModel>().ToList());
         }
 
         [Test]
@@ -54,6 +66,8 @@ namespace KissExcel.Test.Core
 
     internal class StubExcelReader : ExcelReader
     {
+        internal IEnumerable<(int rowIndex, int columnIndex, string content)> FakeContent { get; set; }
+
         protected override void CheckRequiredOptions()
         {
         }
@@ -62,16 +76,21 @@ namespace KissExcel.Test.Core
         {
         }
 
-        protected override IEnumerable<(int rowIndex, int ColumnIndex, string content)> ParseContents()
+        protected override IEnumerable<(int rowIndex, int columnIndex, string content)> ParseContents()
         {
-            yield return (0, 0, "Num");
-            yield return (1, 0, "1");
-            yield return (2, 0, "2");
+            RowLength = FakeContent.Count();
+            return FakeContent;
         }
     }
 
-    internal class SomeData
+    internal class SimpleModel
     {
         [ColumnName("Number")] public int Id { get; set; }
+    }
+
+    internal class IgnoreCaseModel
+    {
+        [ColumnName("number", IgnoreCase = true)]
+        public int Id { get; set; }
     }
 }

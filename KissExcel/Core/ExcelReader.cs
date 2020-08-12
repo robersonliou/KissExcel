@@ -81,20 +81,23 @@ namespace KissExcel.Core
         private IEnumerable<(PropertyInfo propertyInfo, string columnName, int columnIndex)>
             GetPropertyMappingInfos<TData>()
         {
-            var propertyMappingInfos = GetPropertyInfosWithExcelColumnAttr<TData>().Select(x =>
+            var propertyMappingInfos = GetPropertyInfosWithExcelColumnAttr<TData>().Select(propertyInfo =>
             {
-                var columnName = x.CustomAttributes.FirstOrDefault(a => a.AttributeType == typeof(ColumnNameAttribute))
-                    ?.ConstructorArguments.FirstOrDefault().Value as string;
-
+                var attr = propertyInfo.GetCustomAttribute<ColumnNameAttribute>();
                 try
                 {
-                    var columnIndex = _contentInfos.Single(a => a.rowIndex == 0 && a.content == columnName).columnIndex;
-                    return (x, columnName, columnIndex);
+                    var stringComparison = attr.IgnoreCase
+                        ? StringComparison.CurrentCultureIgnoreCase
+                        : StringComparison.CurrentCulture;
+
+                    var (_, columnIndex, content) = _contentInfos.Single(a =>
+                        a.rowIndex == 0 && a.content.Equals(attr.Name, stringComparison));
+                    return (propertyInfo, content, columnIndex);
                 }
                 catch (InvalidOperationException e)
                 {
                     throw new NoMatchedColumnNameException(
-                        $"Can not find matched column name:[{columnName}] in the excel header.");
+                        $"Can not find matched column name:[{attr.Name}] in the excel header.");
                 }
             });
             return propertyMappingInfos;
@@ -146,7 +149,7 @@ namespace KissExcel.Core
             return _spreadSheetDoc.WorkbookPart.Workbook.Descendants<Sheet>().First().Id;
         }
 
-        protected virtual IEnumerable<(int rowIndex, int ColumnIndex, string content)> ParseContents()
+        protected virtual IEnumerable<(int rowIndex, int columnIndex, string content)> ParseContents()
         {
             for (var i = 0; i < RowLength; i++)
             {
