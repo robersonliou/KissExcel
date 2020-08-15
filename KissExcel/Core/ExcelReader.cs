@@ -35,9 +35,15 @@ namespace KissExcel.Core
             _spreadSheetDoc.Dispose();
         }
 
-        public ExcelReader IncludeHeader(bool includeHeader)
+        public ExcelReader IncludeHeader()
         {
-            _mappingOptions.IncludeHeader = includeHeader;
+            _mappingOptions.IncludeHeader = true;
+            return this;
+        }
+
+        public ExcelReader ExcludeHeader()
+        {
+            _mappingOptions.IncludeHeader = false;
             return this;
         }
 

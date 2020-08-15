@@ -29,7 +29,7 @@ namespace KissExcel.Test.Core
         public void ColumnName_Ingore_CaseSensitive()
         {
             var stubExcelReader = new StubExcelReader();
-            stubExcelReader.IncludeHeader(true);
+            stubExcelReader.IncludeHeader();
             stubExcelReader.FakeContent = new[] {(0, 0, "Number"), (1, 0, "999")};
             var actual = stubExcelReader.MapTo<IgnoreCaseModel>().First();
             Assert.AreEqual(actual.Id, 999);
@@ -46,7 +46,7 @@ namespace KissExcel.Test.Core
         public void Matched_ColumnName_NotFound_ThrowException()
         {
             var stubExcelReader = new StubExcelReader();
-            stubExcelReader.IncludeHeader(true);
+            stubExcelReader.IncludeHeader();
             stubExcelReader.FakeContent = new[] {(0, 0, "Num"), (1, 0, "1")};
 
             var expectedErrorMessage = "Can not find matched column name:[Number] in the excel header.";
