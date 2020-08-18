@@ -10,7 +10,8 @@ namespace ConsoleAppCore
     {
         static void Main(string[] args)
         {
-            var path = @"C:\Users\Roberson\Desktop\sample_column_name.xlsx";
+            //var path = @"C:\Users\Roberson\Desktop\sample_column_name.xlsx";
+            var path = @"C:\Users\Roberson\Desktop\sample_eng.xlsx";
             var orderModels = ExcelHub.Reader.Open(path)
                 .SheetAs("Sheet1").IncludeHeader().MapTo<OrderModel>().ToList();
 

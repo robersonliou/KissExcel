@@ -52,15 +52,58 @@ namespace KissExcel.Core
             CheckRequiredOptions();
             SetupRequiredMeta();
             _contentInfos = ParseContents().ToList();
-            if (_mappingOptions.IncludeHeader && typeof(TData).PropertiesContainsAttribute<ColumnNameAttribute>())
-                return MapByHeaderName<TData>();
 
-            return null;
+            if (_mappingOptions.IncludeHeader)
+                return typeof(TData).PropertiesContainsAttribute<ColumnNameAttribute>()
+                    ? MapByHeaderTitles<TData>()
+                    : MapByProperties<TData>();
+
+            return Enumerable.Empty<TData>();
         }
 
-        private IEnumerable<TData> MapByHeaderName<TData>()
+        private IEnumerable<TData> MapByProperties<TData>()
         {
             var propertyMappingInfos = GetPropertyMappingInfos<TData>().ToList();
+
+            for (var i = 1; i < RowLength; i++)
+            {
+                var data = Activator.CreateInstance<TData>();
+                foreach (var (propertyInfo, _, columnIndex) in propertyMappingInfos)
+                {
+                    var value = CellValueLookup(i, columnIndex);
+                    var convertedType = propertyInfo.PropertyType.IsNullable()
+                        ? propertyInfo.PropertyType.GenericTypeArguments[0]
+                        : propertyInfo.PropertyType;
+                    var convertedValue = Convert.ChangeType(value, convertedType);
+                    propertyInfo.SetValue(data, convertedValue);
+                }
+
+                yield return data;
+            }
+        }
+
+        private IEnumerable<(PropertyInfo propertyInfo, string title, int columnIndex)> GetPropertyMappingInfos<TData>()
+        {
+            var propertyMappingInfos = typeof(TData).GetProperties().Select(propertyInfo =>
+            {
+                try
+                {
+                    var (_, columnIndex, title) = _contentInfos.Single(a =>
+                        a.rowIndex == 0 && a.content.Equals(propertyInfo.Name, StringComparison.CurrentCulture));
+                    return (propertyInfo, title, columnIndex);
+                }
+                catch (InvalidOperationException e)
+                {
+                    throw new NoMatchedColumnNameException(
+                        $"Can not find matched column name:[{propertyInfo.Name}] in the excel header.");
+                }
+            });
+            return propertyMappingInfos;
+        }
+
+        private IEnumerable<TData> MapByHeaderTitles<TData>()
+        {
+            var propertyMappingInfos = GetColumnOfPropertyMappingInfos<TData>().ToList();
 
             for (var i = 1; i < RowLength; i++)
             {
@@ -85,7 +128,7 @@ namespace KissExcel.Core
         }
 
         private IEnumerable<(PropertyInfo propertyInfo, string columnName, int columnIndex)>
-            GetPropertyMappingInfos<TData>()
+            GetColumnOfPropertyMappingInfos<TData>()
         {
             var propertyMappingInfos = GetPropertyInfosWithExcelColumnAttr<TData>().Select(propertyInfo =>
             {
