@@ -41,6 +41,12 @@ namespace KissExcel.Core
             return this;
         }
 
+        public ExcelReader IgnoreCase()
+        {
+            _mappingOptions.IgnoreCase = true;
+            return this;
+        }
+
         public ExcelReader IncludeHeader()
         {
             _mappingOptions.IncludeHeader = true;
@@ -154,8 +160,11 @@ namespace KissExcel.Core
 
         private IEnumerable<(PropertyInfo propertyInfo, string title, int columnIndex)> GetPropertyMappingInfos<TData>()
         {
+            var stringComparison = _mappingOptions.IgnoreCase
+                ? StringComparison.CurrentCultureIgnoreCase
+                : StringComparison.CurrentCulture;
             var propertyMappingInfos = typeof(TData).GetProperties()
-                .Select(propertyInfo => GetPropertyMappingInfo(propertyInfo, propertyInfo.Name));
+                .Select(propertyInfo => GetPropertyMappingInfo(propertyInfo, propertyInfo.Name, stringComparison));
             return propertyMappingInfos;
         }
 
@@ -192,12 +201,6 @@ namespace KissExcel.Core
             return MapByIndex<TData>(propertyMappingInfos);
         }
 
-        private IEnumerable<TData> MapByProperties<TData>()
-        {
-            var propertyMappingInfos = GetPropertyMappingInfos<TData>().ToList();
-            return MapByIndex<TData>(propertyMappingInfos);
-        }
-
         private IEnumerable<TData> MapByIndex<TData>(
             List<(PropertyInfo propertyInfo, string columnName, int columnIndex)> propertyMappingInfos)
         {
@@ -216,6 +219,12 @@ namespace KissExcel.Core
 
                 yield return data;
             }
+        }
+
+        private IEnumerable<TData> MapByProperties<TData>()
+        {
+            var propertyMappingInfos = GetPropertyMappingInfos<TData>().ToList();
+            return MapByIndex<TData>(propertyMappingInfos);
         }
 
         private void ThrowExcelOptionRequiredException(string propertyName)

@@ -46,7 +46,7 @@ namespace KissExcel.Test.Core
 
             Assert.Throws(Is.TypeOf<NoMatchedColumnNameException>()
                     .And.Message.EqualTo(expectedErrorMessage),
-                () => stubExcelReader.MapTo<ModelWithColumnAttr>().ToList());
+                () => stubExcelReader.MapTo<ColumnNameAttributeMappingModel>().ToList());
         }
 
         [Test]
@@ -62,9 +62,19 @@ namespace KissExcel.Test.Core
             var stubExcelReader = new StubExcelReader();
             stubExcelReader.IncludeHeader();
             stubExcelReader.FakeContent = new[] {(0, 0, "Id"), (1, 0, "999")};
-            var firstRow = stubExcelReader.MapTo<SimpleModel>().FirstOrDefault();
+            var firstRow = stubExcelReader.MapTo<PropertyMappingModel>().FirstOrDefault();
 
             Assert.AreEqual(999, firstRow.Id);
+        }
+
+        [Test]
+        public void Property_Ingore_CaseSensitive()
+        {
+            var stubExcelReader = new StubExcelReader();
+            stubExcelReader.IncludeHeader().IgnoreCase();
+            stubExcelReader.FakeContent = new[] {(0, 0, "id"), (1, 0, "999")};
+            var actual = stubExcelReader.MapTo<PropertyMappingModel>().First();
+            Assert.AreEqual(actual.Id, 999);
         }
 
         [Test]
@@ -78,7 +88,7 @@ namespace KissExcel.Test.Core
 
             Assert.Throws(Is.TypeOf<NoMatchedColumnNameException>()
                     .And.Message.EqualTo(expectedErrorMessage),
-                () => stubExcelReader.MapTo<SimpleModel>().ToList());
+                () => stubExcelReader.MapTo<PropertyMappingModel>().ToList());
         }
 
         [Test]
@@ -98,24 +108,24 @@ namespace KissExcel.Test.Core
         {
         }
 
-        protected override void SetupRequiredMeta()
-        {
-        }
-
         protected override IEnumerable<(int rowIndex, int columnIndex, string content)> ParseContents()
         {
             RowLength = FakeContent.Count();
             return FakeContent;
         }
+
+        protected override void SetupRequiredMeta()
+        {
+        }
     }
 
 
-    internal class SimpleModel
+    internal class PropertyMappingModel
     {
         public int Id { get; set; }
     }
 
-    internal class ModelWithColumnAttr
+    internal class ColumnNameAttributeMappingModel
     {
         [ColumnName("Number")] public int Id { get; set; }
     }

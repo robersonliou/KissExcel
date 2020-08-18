@@ -6,5 +6,6 @@
         public string SheetName { get; set; }
         public bool IncludeHeader { get; set; } = false;
         public bool IsEditable { get; set; } = false;
+        public bool IgnoreCase { get; set; } = false;
     }
 }

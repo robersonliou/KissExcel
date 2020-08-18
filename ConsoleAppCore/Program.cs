@@ -13,7 +13,7 @@ namespace ConsoleAppCore
             //var path = @"C:\Users\Roberson\Desktop\sample_column_name.xlsx";
             var path = @"C:\Users\Roberson\Desktop\sample_eng.xlsx";
             var orderModels = ExcelHub.Reader.Open(path)
-                .SheetAs("Sheet1").IncludeHeader().MapTo<OrderModel>().ToList();
+                .SheetAs("Sheet1").IncludeHeader().IgnoreCase().MapTo<OrderModel>().ToList();
 
             Console.Read();
 
