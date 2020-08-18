@@ -35,15 +35,15 @@ namespace KissExcel.Core
             _spreadSheetDoc.Dispose();
         }
 
-        public ExcelReader IncludeHeader()
-        {
-            _mappingOptions.IncludeHeader = true;
-            return this;
-        }
-
         public ExcelReader ExcludeHeader()
         {
             _mappingOptions.IncludeHeader = false;
+            return this;
+        }
+
+        public ExcelReader IncludeHeader()
+        {
+            _mappingOptions.IncludeHeader = true;
             return this;
         }
 
@@ -59,103 +59,6 @@ namespace KissExcel.Core
                     : MapByProperties<TData>();
 
             return Enumerable.Empty<TData>();
-        }
-
-        private IEnumerable<TData> MapByProperties<TData>()
-        {
-            var propertyMappingInfos = GetPropertyMappingInfos<TData>().ToList();
-
-            for (var i = 1; i < RowLength; i++)
-            {
-                var data = Activator.CreateInstance<TData>();
-                foreach (var (propertyInfo, _, columnIndex) in propertyMappingInfos)
-                {
-                    var value = CellValueLookup(i, columnIndex);
-                    var convertedType = propertyInfo.PropertyType.IsNullable()
-                        ? propertyInfo.PropertyType.GenericTypeArguments[0]
-                        : propertyInfo.PropertyType;
-                    var convertedValue = Convert.ChangeType(value, convertedType);
-                    propertyInfo.SetValue(data, convertedValue);
-                }
-
-                yield return data;
-            }
-        }
-
-        private IEnumerable<(PropertyInfo propertyInfo, string title, int columnIndex)> GetPropertyMappingInfos<TData>()
-        {
-            var propertyMappingInfos = typeof(TData).GetProperties().Select(propertyInfo =>
-            {
-                try
-                {
-                    var (_, columnIndex, title) = _contentInfos.Single(a =>
-                        a.rowIndex == 0 && a.content.Equals(propertyInfo.Name, StringComparison.CurrentCulture));
-                    return (propertyInfo, title, columnIndex);
-                }
-                catch (InvalidOperationException e)
-                {
-                    throw new NoMatchedColumnNameException(
-                        $"Can not find matched column name:[{propertyInfo.Name}] in the excel header.");
-                }
-            });
-            return propertyMappingInfos;
-        }
-
-        private IEnumerable<TData> MapByHeaderTitles<TData>()
-        {
-            var propertyMappingInfos = GetColumnOfPropertyMappingInfos<TData>().ToList();
-
-            for (var i = 1; i < RowLength; i++)
-            {
-                var data = Activator.CreateInstance<TData>();
-                foreach (var (propertyInfo, _, columnIndex) in propertyMappingInfos)
-                {
-                    var value = CellValueLookup(i, columnIndex);
-                    var convertedType = propertyInfo.PropertyType.IsNullable()
-                        ? propertyInfo.PropertyType.GenericTypeArguments[0]
-                        : propertyInfo.PropertyType;
-                    var convertedValue = Convert.ChangeType(value, convertedType);
-                    propertyInfo.SetValue(data, convertedValue);
-                }
-
-                yield return data;
-            }
-        }
-
-        private string CellValueLookup(int i, int columnIndex)
-        {
-            return _contentInfos.SingleOrDefault(x => x.rowIndex == i && x.columnIndex == columnIndex).content;
-        }
-
-        private IEnumerable<(PropertyInfo propertyInfo, string columnName, int columnIndex)>
-            GetColumnOfPropertyMappingInfos<TData>()
-        {
-            var propertyMappingInfos = GetPropertyInfosWithExcelColumnAttr<TData>().Select(propertyInfo =>
-            {
-                var attr = propertyInfo.GetCustomAttribute<ColumnNameAttribute>();
-                try
-                {
-                    var stringComparison = attr.IgnoreCase
-                        ? StringComparison.CurrentCultureIgnoreCase
-                        : StringComparison.CurrentCulture;
-
-                    var (_, columnIndex, content) = _contentInfos.Single(a =>
-                        a.rowIndex == 0 && a.content.Equals(attr.Name, stringComparison));
-                    return (propertyInfo, content, columnIndex);
-                }
-                catch (InvalidOperationException e)
-                {
-                    throw new NoMatchedColumnNameException(
-                        $"Can not find matched column name:[{attr.Name}] in the excel header.");
-                }
-            });
-            return propertyMappingInfos;
-        }
-
-        private IEnumerable<PropertyInfo> GetPropertyInfosWithExcelColumnAttr<TData>()
-        {
-            return typeof(TData).GetProperties().Where(x =>
-                x.CustomAttributes.Any(a => a.AttributeType == typeof(ColumnNameAttribute)));
         }
 
         public ExcelReader Open(string path)
@@ -183,21 +86,6 @@ namespace KissExcel.Core
                 ThrowExcelOptionRequiredException(nameof(ExcelMappingOptions.SheetName));
         }
 
-        private string GetCellText(Cell cell)
-        {
-            if (cell.ChildElements.Count == 0)
-                return null;
-            var cellValue = cell.CellValue.InnerText;
-            if (cell.DataType != null && cell.DataType == CellValues.SharedString)
-                cellValue = _sharedStringTable.ChildElements[int.Parse(cellValue)].InnerText;
-            return cellValue;
-        }
-
-        private StringValue GetFirstSheetId()
-        {
-            return _spreadSheetDoc.WorkbookPart.Workbook.Descendants<Sheet>().First().Id;
-        }
-
         protected virtual IEnumerable<(int rowIndex, int columnIndex, string content)> ParseContents()
         {
             for (var i = 0; i < RowLength; i++)
@@ -221,6 +109,70 @@ namespace KissExcel.Core
             ColumnLength = _rows.First().Descendants<Cell>().Count();
         }
 
+        private string CellValueLookup(int i, int columnIndex)
+        {
+            return _contentInfos.SingleOrDefault(x => x.rowIndex == i && x.columnIndex == columnIndex).content;
+        }
+
+        private string GetCellText(Cell cell)
+        {
+            if (cell.ChildElements.Count == 0)
+                return null;
+            var cellValue = cell.CellValue.InnerText;
+            if (cell.DataType != null && cell.DataType == CellValues.SharedString)
+                cellValue = _sharedStringTable.ChildElements[int.Parse(cellValue)].InnerText;
+            return cellValue;
+        }
+
+        private StringValue GetFirstSheetId()
+        {
+            return _spreadSheetDoc.WorkbookPart.Workbook.Descendants<Sheet>().First().Id;
+        }
+
+        private IEnumerable<PropertyInfo> GetPropertyInfosWithColumnNameAttr<TData>()
+        {
+            return typeof(TData).GetProperties().Where(x =>
+                x.CustomAttributes.Any(a => a.AttributeType == typeof(ColumnNameAttribute)));
+        }
+
+        private (PropertyInfo propertyInfo, string title, int columnIndex) GetPropertyMappingInfo(
+            PropertyInfo propertyInfo, string mappingName,
+            StringComparison stringComparison = StringComparison.CurrentCulture)
+        {
+            try
+            {
+                var headerInfos = _contentInfos.Where(x => x.rowIndex == 0);
+                var (_, columnIndex, title) = headerInfos.Single(x => x.content.Equals(mappingName, stringComparison));
+                return (propertyInfo, title, columnIndex);
+            }
+            catch (InvalidOperationException e)
+            {
+                throw new NoMatchedColumnNameException(
+                    $"Can not find matched column name:[{mappingName}] in the excel header.");
+            }
+        }
+
+        private IEnumerable<(PropertyInfo propertyInfo, string title, int columnIndex)> GetPropertyMappingInfos<TData>()
+        {
+            var propertyMappingInfos = typeof(TData).GetProperties()
+                .Select(propertyInfo => GetPropertyMappingInfo(propertyInfo, propertyInfo.Name));
+            return propertyMappingInfos;
+        }
+
+        private IEnumerable<(PropertyInfo propertyInfo, string columnName, int columnIndex)>
+            GetPropertyMappingInfosWithColumnNameAttr<TData>()
+        {
+            var propertyMappingInfos = GetPropertyInfosWithColumnNameAttr<TData>().Select(propertyInfo =>
+            {
+                var attribute = propertyInfo.GetCustomAttribute<ColumnNameAttribute>();
+                var stringComparison = attribute.IgnoreCase
+                    ? StringComparison.CurrentCultureIgnoreCase
+                    : StringComparison.CurrentCulture;
+                return GetPropertyMappingInfo(propertyInfo, attribute.Name, stringComparison);
+            });
+            return propertyMappingInfos;
+        }
+
         private StringValue GetSheetId()
         {
             return _mappingOptions.SheetName.IsNullOrEmpty()
@@ -232,6 +184,48 @@ namespace KissExcel.Core
         {
             return _spreadSheetDoc.WorkbookPart.Workbook.Descendants<Sheet>()
                 .SingleOrDefault(x => x.Name == sheetName)?.Id;
+        }
+
+        private IEnumerable<TData> MapByHeaderTitles<TData>()
+        {
+            var propertyMappingInfos = GetPropertyMappingInfosWithColumnNameAttr<TData>().ToList();
+
+            for (var i = 1; i < RowLength; i++)
+            {
+                var data = Activator.CreateInstance<TData>();
+                foreach (var (propertyInfo, _, columnIndex) in propertyMappingInfos)
+                {
+                    var value = CellValueLookup(i, columnIndex);
+                    var convertedType = propertyInfo.PropertyType.IsNullable()
+                        ? propertyInfo.PropertyType.GenericTypeArguments[0]
+                        : propertyInfo.PropertyType;
+                    var convertedValue = Convert.ChangeType(value, convertedType);
+                    propertyInfo.SetValue(data, convertedValue);
+                }
+
+                yield return data;
+            }
+        }
+
+        private IEnumerable<TData> MapByProperties<TData>()
+        {
+            var propertyMappingInfos = GetPropertyMappingInfos<TData>().ToList();
+
+            for (var i = 1; i < RowLength; i++)
+            {
+                var data = Activator.CreateInstance<TData>();
+                foreach (var (propertyInfo, _, columnIndex) in propertyMappingInfos)
+                {
+                    var value = CellValueLookup(i, columnIndex);
+                    var convertedType = propertyInfo.PropertyType.IsNullable()
+                        ? propertyInfo.PropertyType.GenericTypeArguments[0]
+                        : propertyInfo.PropertyType;
+                    var convertedValue = Convert.ChangeType(value, convertedType);
+                    propertyInfo.SetValue(data, convertedValue);
+                }
+
+                yield return data;
+            }
         }
 
         private void ThrowExcelOptionRequiredException(string propertyName)
