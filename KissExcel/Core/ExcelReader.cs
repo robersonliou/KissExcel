@@ -189,28 +189,18 @@ namespace KissExcel.Core
         private IEnumerable<TData> MapByHeaderTitles<TData>()
         {
             var propertyMappingInfos = GetPropertyMappingInfosWithColumnNameAttr<TData>().ToList();
-
-            for (var i = 1; i < RowLength; i++)
-            {
-                var data = Activator.CreateInstance<TData>();
-                foreach (var (propertyInfo, _, columnIndex) in propertyMappingInfos)
-                {
-                    var value = CellValueLookup(i, columnIndex);
-                    var convertedType = propertyInfo.PropertyType.IsNullable()
-                        ? propertyInfo.PropertyType.GenericTypeArguments[0]
-                        : propertyInfo.PropertyType;
-                    var convertedValue = Convert.ChangeType(value, convertedType);
-                    propertyInfo.SetValue(data, convertedValue);
-                }
-
-                yield return data;
-            }
+            return MapByIndex<TData>(propertyMappingInfos);
         }
 
         private IEnumerable<TData> MapByProperties<TData>()
         {
             var propertyMappingInfos = GetPropertyMappingInfos<TData>().ToList();
+            return MapByIndex<TData>(propertyMappingInfos);
+        }
 
+        private IEnumerable<TData> MapByIndex<TData>(
+            List<(PropertyInfo propertyInfo, string columnName, int columnIndex)> propertyMappingInfos)
+        {
             for (var i = 1; i < RowLength; i++)
             {
                 var data = Activator.CreateInstance<TData>();
