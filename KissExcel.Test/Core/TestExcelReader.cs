@@ -36,14 +36,7 @@ namespace KissExcel.Test.Core
         }
 
         [Test]
-        public void FilePathOfOption_IsNull_ThrowException()
-        {
-            Assert.Throws<ExcelOptionRequiredException>(() =>
-                _excelReader.MapTo<object>());
-        }
-
-        [Test]
-        public void Matched_ColumnName_NotFound_ThrowException()
+        public void ColumnNameAttrMapping_Matched_ColumnName_NotFound_ThrowException()
         {
             var stubExcelReader = new StubExcelReader();
             stubExcelReader.IncludeHeader();
@@ -52,7 +45,40 @@ namespace KissExcel.Test.Core
             var expectedErrorMessage = "Can not find matched column name:[Number] in the excel header.";
 
             Assert.Throws(Is.TypeOf<NoMatchedColumnNameException>()
-                .And.Message.EqualTo(expectedErrorMessage), () => stubExcelReader.MapTo<SimpleModel>().ToList());
+                    .And.Message.EqualTo(expectedErrorMessage),
+                () => stubExcelReader.MapTo<ModelWithColumnAttr>().ToList());
+        }
+
+        [Test]
+        public void FilePathOfOption_IsNull_ThrowException()
+        {
+            Assert.Throws<ExcelOptionRequiredException>(() =>
+                _excelReader.MapTo<object>());
+        }
+
+        [Test]
+        public void Mapping_By_Properties()
+        {
+            var stubExcelReader = new StubExcelReader();
+            stubExcelReader.IncludeHeader();
+            stubExcelReader.FakeContent = new[] {(0, 0, "Id"), (1, 0, "999")};
+            var firstRow = stubExcelReader.MapTo<SimpleModel>().FirstOrDefault();
+
+            Assert.AreEqual(999, firstRow.Id);
+        }
+
+        [Test]
+        public void PropertyMapping_Matched_ColumnName_NotFound_ThrowException()
+        {
+            var stubExcelReader = new StubExcelReader();
+            stubExcelReader.IncludeHeader();
+            stubExcelReader.FakeContent = new[] {(0, 0, "Number"), (1, 0, "1")};
+
+            var expectedErrorMessage = "Can not find matched column name:[Id] in the excel header.";
+
+            Assert.Throws(Is.TypeOf<NoMatchedColumnNameException>()
+                    .And.Message.EqualTo(expectedErrorMessage),
+                () => stubExcelReader.MapTo<SimpleModel>().ToList());
         }
 
         [Test]
@@ -83,7 +109,13 @@ namespace KissExcel.Test.Core
         }
     }
 
+
     internal class SimpleModel
+    {
+        public int Id { get; set; }
+    }
+
+    internal class ModelWithColumnAttr
     {
         [ColumnName("Number")] public int Id { get; set; }
     }
