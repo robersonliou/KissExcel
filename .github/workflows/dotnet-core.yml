@@ -1,0 +1,18 @@
+name: KissExcel-CI
+
+on:
+  push:
+    branches:
+    - master
+env:
+  solution: '**/*.sln'
+  buildPlatform: Any CPU
+  buildConfiguration: Release
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: dotnet build KissExcel/KissExcel.csproj --configuration ${{ env.buildConfiguration }}
+    - run: dotnet test **/*test*.csproj
+    - run: dotnet publish **/KissExcel.csproj
