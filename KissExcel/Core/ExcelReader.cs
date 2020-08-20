@@ -61,10 +61,31 @@ namespace KissExcel.Core
 
             if (_mappingOptions.IncludeHeader)
                 return typeof(TData).PropertiesContainsAttribute<ColumnNameAttribute>()
-                    ? MapByHeaderTitles<TData>()
-                    : MapByProperties<TData>();
+                    ? MapByHeaderTitles<TData>() : MapByProperties<TData>();
+
+            if (typeof(TData).PropertiesContainsAttribute<ColumnIndexAttribute>())
+            {
+                return MapByIndexers<TData>();
+            }
 
             return Enumerable.Empty<TData>();
+        }
+
+        private IEnumerable<TData> MapByIndexers<TData>()
+        {
+            var propertyMappingInfos = GetPropertyInfosWithColumnIndexAttr<TData>().Select(x =>
+            {
+                var attribute = x.GetCustomAttribute<ColumnIndexAttribute>();
+                return (x, "", attribute.Index);
+            });
+            return PropertyIndexMapping<TData>(propertyMappingInfos);
+        }
+
+        private static IEnumerable<PropertyInfo> GetPropertyInfosWithColumnIndexAttr<TData>()
+        {
+            var propertyInfos = typeof(TData).GetProperties().Where(x =>
+                x.CustomAttributes.Any(a => a.AttributeType == typeof(ColumnIndexAttribute)));
+            return propertyInfos;
         }
 
         public ExcelReader Open(string path)
@@ -88,8 +109,6 @@ namespace KissExcel.Core
         {
             if (_mappingOptions.FilePath.IsNullOrEmpty())
                 ThrowExcelOptionRequiredException(nameof(ExcelMappingOptions.FilePath));
-            if (_mappingOptions.SheetName.IsNullOrEmpty())
-                ThrowExcelOptionRequiredException(nameof(ExcelMappingOptions.SheetName));
         }
 
         protected virtual IEnumerable<(int rowIndex, int columnIndex, string content)> ParseContents()
@@ -198,13 +217,14 @@ namespace KissExcel.Core
         private IEnumerable<TData> MapByHeaderTitles<TData>()
         {
             var propertyMappingInfos = GetPropertyMappingInfosWithColumnNameAttr<TData>().ToList();
-            return MapByIndex<TData>(propertyMappingInfos);
+            return PropertyIndexMapping<TData>(propertyMappingInfos);
         }
 
-        private IEnumerable<TData> MapByIndex<TData>(
-            List<(PropertyInfo propertyInfo, string columnName, int columnIndex)> propertyMappingInfos)
+        private IEnumerable<TData> PropertyIndexMapping<TData>(
+            IEnumerable<(PropertyInfo propertyInfo, string title, int columnIndex)> propertyMappingInfos)
         {
-            for (var i = 1; i < RowLength; i++)
+            var start = _mappingOptions.IncludeHeader?1:0;
+            for (var i = start; i < RowLength; i++)
             {
                 var data = Activator.CreateInstance<TData>();
                 foreach (var (propertyInfo, _, columnIndex) in propertyMappingInfos)
@@ -223,8 +243,8 @@ namespace KissExcel.Core
 
         private IEnumerable<TData> MapByProperties<TData>()
         {
-            var propertyMappingInfos = GetPropertyMappingInfos<TData>().ToList();
-            return MapByIndex<TData>(propertyMappingInfos);
+            var propertyMappingInfos = GetPropertyMappingInfos<TData>();
+            return PropertyIndexMapping<TData>(propertyMappingInfos);
         }
 
         private void ThrowExcelOptionRequiredException(string propertyName)
