@@ -12,11 +12,9 @@ namespace ConsoleAppCore
         {
             var path = $@"{Environment.CurrentDirectory}\Docs\sample_index.xlsx";
             var orderModels = ExcelHub.Reader.Open(path)
-                //.SheetAs("Sheet1")
-                .MapTo<OrderModel>().ToList();
+                .SheetAs("Sheet1").MapTo<OrderModel>().ToList();
 
             Console.Read();
-
         }
     }
 }
