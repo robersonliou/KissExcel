@@ -14,5 +14,5 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - run: dotnet build KissExcel/KissExcel.csproj --configuration ${{ env.buildConfiguration }}
-    - run: dotnet test **/*test*.csproj
-    - run: dotnet publish **/KissExcel.csproj
+    - run: dotnet test KissExcel.Test/KissExcel.Test.csproj
+    - run: dotnet publish KissExcel/KissExcel.csproj
