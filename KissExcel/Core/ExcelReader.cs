@@ -19,6 +19,7 @@ namespace KissExcel.Core
         private SharedStringTable _sharedStringTable;
         private Worksheet _sheet;
         private SpreadsheetDocument _spreadSheetDoc;
+
         public ExcelMappingOptions MappingOptions { get; set; } = new ExcelMappingOptions();
 
         public int RowLength { get; set; }
