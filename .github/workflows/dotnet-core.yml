@@ -10,7 +10,7 @@ env:
   buildConfiguration: Release
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - run: dotnet build KissExcel/KissExcel.csproj --configuration ${{ env.buildConfiguration }}
