@@ -2,8 +2,11 @@ name: KissExcel-CI
 
 on:
   push:
+    paths-ignore:
+    - '.github/**'
     branches:
     - master
+      - 
 env:
   solution: '**/*.sln'
   buildPlatform: Any CPU
@@ -15,4 +18,7 @@ jobs:
     - uses: actions/checkout@v2
     - run: dotnet build KissExcel/KissExcel.csproj --configuration ${{ env.buildConfiguration }}
     - run: dotnet test KissExcel.Test/KissExcel.Test.csproj
+    - run: dotnet pack KissExcel/KissExcel.csproj  
     - run: dotnet publish KissExcel/KissExcel.csproj
+      
+      
