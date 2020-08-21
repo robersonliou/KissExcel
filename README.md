@@ -2,7 +2,7 @@
 
 ![Build](https://github.com/robersonliou/KissExcel/workflows/KissExcel-CI/badge.svg)
 
-### ⭐️ Giving Star! We appreciate your ispiration.
+### ⭐️ Giving Star! We appreciate for your inspiration.
 
 ## What is KissExcel?
 
