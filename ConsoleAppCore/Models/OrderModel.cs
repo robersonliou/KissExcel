@@ -5,7 +5,7 @@ namespace ConsoleAppCore.Models
     internal class OrderModel
     {
 
-        //[ColumnName("編號")]
+        [ColumnName("編號")]
         [ColumnIndex(0)]
         public int Id { get; set; }
         

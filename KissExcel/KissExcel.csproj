@@ -6,6 +6,7 @@
     <Authors>Roberson Liou</Authors>
     <Description>The library is based on OpenXml, to make c# developer more easily transform data with excel.</Description>
     <Version>0.0.1</Version>
+    <PackageProjectUrl>https://github.com/robersonliou/KissExcel</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
