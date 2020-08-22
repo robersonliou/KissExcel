@@ -6,7 +6,7 @@ on:
 #     - '.github/**'
     branches:
     - master
-      - 
+
 env:
   solution: '**/*.sln'
   buildPlatform: Any CPU
