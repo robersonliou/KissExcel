@@ -56,8 +56,7 @@ namespace KissExcel.Core
 
             if (MappingOptions.IncludeHeader)
                 return typeof(TData).PropertiesContainsAttribute<ColumnNameAttribute>()
-                    ? MapByHeaderTitles<TData>()
-                    : MapByProperties<TData>();
+                    ? MapByHeaderTitles<TData>() : MapByProperties<TData>();
 
             if (typeof(TData).PropertiesContainsAttribute<ColumnIndexAttribute>()) return MapByIndexers<TData>();
 
@@ -217,12 +216,18 @@ namespace KissExcel.Core
         private IEnumerable<TData> PropertyIndexMapping<TData>(
             IEnumerable<(PropertyInfo propertyInfo, int Index)> propertyMappingInfos)
         {
-            for (var i = MappingOptions.IncludeHeader ? 1 : 0; i < RowLength; i++)
+            for (var rowIndex = MappingOptions.IncludeHeader ? 1 : 0; rowIndex < RowLength; rowIndex++)
             {
                 var data = Activator.CreateInstance<TData>();
                 foreach (var (propertyInfo, columnIndex) in propertyMappingInfos)
                 {
-                    var value = CellValueLookup(i, columnIndex);
+                    var value = CellValueLookup(rowIndex, columnIndex);
+
+                    if (propertyInfo.TryGetAttribute(out ColumnParserAttribute attributre))
+                    {
+                        value = attributre.OnParsing(value);
+                    }
+
                     var convertedType = propertyInfo.PropertyType.IsNullable()
                         ? propertyInfo.PropertyType.GenericTypeArguments[0]
                         : propertyInfo.PropertyType;

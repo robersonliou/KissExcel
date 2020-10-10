@@ -1,11 +1,13 @@
-﻿using KissExcel.Attributes;
+﻿using System;
+using ConsoleAppCore.Attributes;
+using KissExcel.Attributes;
 
 namespace ConsoleAppCore.Models
 {
     internal class OrderModel
     {
 
-        [ColumnName("編號")]
+        [MyIndexColumnParser]
         [ColumnIndex(0)]
         public int Id { get; set; }
         
