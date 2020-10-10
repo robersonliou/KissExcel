@@ -7,7 +7,8 @@ namespace ConsoleAppCore.Models
     internal class OrderModel
     {
 
-        [MyIndexColumnParser]
+        //[MyIndexColumnParser]
+        [ColumnParser(typeof(MyIndexParser))]
         [ColumnIndex(0)]
         public int Id { get; set; }
         
